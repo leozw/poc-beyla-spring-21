@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-java-actuator
+  labels:
+    app: spring-java-actuator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-java-actuator
+  template:
+    metadata:
+      labels:
+        app: spring-java-actuator
+    spec:
+      # required so the sidecar instrumenter can access the service process
+      shareProcessNamespace: true
+      containers:
+        - name: spring-java-actuator
+          image: leonardozwirtes/spring-java-actuator:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+        - name: autoinstrumenter
+          image: grafana/beyla:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN", "SYS_PTRACE"]
+          env:
+            - name: BEYLA_SERVICE_NAME
+              value: "java-app-actuator"
+            - name: BEYLA_PRINT_TRACES
+              value: "true"
+            - name: BEYLA_OPEN_PORT
+              value: "8080"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://opentelemetrycollector.default.svc.cluster.local:4318"
+            - name: BEYLA_LOG_LEVEL
+              value: "DEBUG"

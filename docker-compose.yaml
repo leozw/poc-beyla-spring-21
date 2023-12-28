@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  spring-app:
+    build: .  
+    ports:
+      - "8080:8080"
+    environment:
+      - OTEL_SERVICE_NAME=java-demo
+      - OTEL_TRACES_EXPORTER=otlp 
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - /home/buteco/estudos/poc-opentelemetry-java-21/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317" # OTLP receiver
+      - "4318:4318" # OTLP receiver
